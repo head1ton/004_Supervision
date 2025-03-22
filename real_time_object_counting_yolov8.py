@@ -1,3 +1,6 @@
+# ultralytics==8.0.32
+# supervision==0.2.1
+
 import cv2
 import argparse
 
@@ -38,13 +41,15 @@ def main():
 
     box_annotator = sv.BoxAnnotator(
         thickness=2,
+        text_thickness=2,
+        text_scale=1
     )
 
     zone_polygon = (ZONE_POLYGON * np.array(args.webcam_resolution)).astype(int)
-    zone = sv.PolygonZone(polygon=zone_polygon)
+    zone = sv.PolygonZone(polygon=zone_polygon, frame_resolution_wh=tuple(args.webcam_resolution))
     zone_annotator = sv.PolygonZoneAnnotator(
         zone=zone,
-        color=sv.Color.RED,
+        color=sv.Color.red(),
         thickness=2,
         text_thickness=4,
         text_scale=2
@@ -53,13 +58,10 @@ def main():
     while True:
         ret, frame = cap.read()
 
-        if ret is None:
-            break
-
         result = model(frame, agnostic_nms=True)[0]
-        detections = sv.Detections.from_yolov5(result)
+        detections = sv.Detections.from_yolov8(result)
         labels = [
-            f"{model.names[class_id]} {confidence:0.2f}"
+            f"{model.model.names[class_id]} {confidence:0.2f}"
             for _, confidence, class_id, _
             in detections
         ]
@@ -74,7 +76,7 @@ def main():
 
         cv2.imshow("yolov8", frame)
 
-        if cv2.waitKey(30) == ord('q'):
+        if (cv2.waitKey(30) == 27):
             break
 
 
